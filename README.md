@@ -46,7 +46,7 @@ const raw: Float64Array = points.data
 |---------------------|-----------|---------|--------------------------------------------------|
 | `itemSize`          | `number`  | `1`     | Number of elements per item                      |
 | `bufferItemCount`   | `number`  | `1024`  | Initial buffer capacity in items                 |
-| `autoGrow`          | `boolean` | `true`  | Grow on out-of-bounds access in `get`/`set`      |
+| `autoGrow`          | `boolean` | `true`  | Grow on out-of-bounds access                     |
 
 ### API
 
