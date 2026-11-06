@@ -1,6 +1,6 @@
 // Vector.test.ts
 import { describe, it, expect, beforeEach } from 'vitest'
-import { Vector, Uint32Vector, Float64Vector } from './index'
+import { Uint32Vector, Float64Vector } from './index'
 
 describe('Vector', () => {
   describe('constructor', () => {
