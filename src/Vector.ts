@@ -36,7 +36,7 @@ export class Vector<TA extends TypedArray> {
       autoGrow = true
     } = options ?? {}
     if (itemSize < 1 || !Number.isInteger(itemSize))
-      throw new RangeError(`itemSize must be a positive integer, got ${itemSize}`)
+      throw new RangeError(`Vector itemSize must be a positive integer, got ${itemSize}`)
     this.#itemSize = itemSize
     this.#itemCount = 0
     this.autoGrow = autoGrow
@@ -66,7 +66,7 @@ export class Vector<TA extends TypedArray> {
 
   resize(newItemCount: number): void {
     if (!Number.isInteger(newItemCount) || newItemCount < 0)
-      throw new RangeError(`newItemCount must be a non-negative integer, got ${newItemCount}`)
+      throw new RangeError(`Resize newItemCount must be a non-negative integer, got ${newItemCount}`)
     const newLength = newItemCount * this.#itemSize
     const newByteLength = newLength * this.#Data.BYTES_PER_ELEMENT
     if (newByteLength > this.#buffer.byteLength) {
@@ -115,17 +115,17 @@ export class Vector<TA extends TypedArray> {
   set(itemIndex: number, value: TA): void {
     const offset = this.assertOffset(itemIndex)
     if (value.length !== this.#itemSize)
-      throw new RangeError(`value length ${value.length} != itemSize ${this.#itemSize}`)
+      throw new RangeError(`Set value length ${value.length} != itemSize ${this.#itemSize}`)
     this.#data.set(value, offset)
   }
 
   move(fromIndex: number, toIndex: number, itemCount: number) {
     if (!Number.isInteger(itemCount) || itemCount < 0)
-      throw new RangeError(`itemCount must be a non-negative integer, got ${itemCount}`)
+      throw new RangeError(`Move itemCount must be a non-negative integer, got ${itemCount}`)
     if (!Number.isInteger(fromIndex) || fromIndex < 0)
-      throw new RangeError(`fromIndex must be a non-negative integer, got ${fromIndex}`)
+      throw new RangeError(`Move fromIndex must be a non-negative integer, got ${fromIndex}`)
     if (!Number.isInteger(toIndex) || toIndex < 0)
-      throw new RangeError(`toIndex must be a non-negative integer, got ${toIndex}`)
+      throw new RangeError(`Move toIndex must be a non-negative integer, got ${toIndex}`)
     if (itemCount === 0) return
     const requiredItemCount = Math.max(fromIndex, toIndex) + itemCount
     if (requiredItemCount > this.#itemCount) {
@@ -138,6 +138,26 @@ export class Vector<TA extends TypedArray> {
     const start = this.getOffset(fromIndex)
     const end = start + (itemCount * this.#itemSize)
     this.#data.copyWithin(target, start, end)
+  }
+
+  fill(itemIndex: number, itemCount: number, value: number) {
+    if (!Number.isInteger(itemCount) || itemCount < 0)
+      throw new RangeError(`Fill itemCount must be a non-negative integer, got ${itemCount}`)
+    if (!Number.isInteger(itemIndex) || itemIndex < 0)
+      throw new RangeError(`Fill itemIndex must be a non-negative integer, got ${itemIndex}`)
+    if (!Number.isFinite(value))
+      throw new RangeError(`Fill value must be finite, got ${value}`)
+    if (itemCount === 0) return
+    const requiredItemCount = itemIndex + itemCount
+    if (requiredItemCount > this.#itemCount) {
+      if (!this.autoGrow) {
+        throw new RangeError(`Out of bounds fill at itemIndex ${itemIndex} size ${itemCount}`)
+      }
+      this.resize(requiredItemCount)
+    }
+    const start = this.getOffset(itemIndex)
+    const end = start + (itemCount * this.#itemSize)
+    this.#data.fill(value, start, end)
   }
 
   get itemSize() {

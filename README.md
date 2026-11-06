@@ -32,6 +32,9 @@ points.clear()
 // Move 2 points from index 0 to index 10
 points.move(0, 10, 2)
 
+// Fill 2 points from index 1 with the value 0
+points.fill(1, 2, 0)
+
 // Access raw buffer
 const raw: Float64Array = points.data
 
@@ -59,6 +62,7 @@ const raw: Float64Array = points.data
 | `set(i, v)`        | `(i: number, v: TA) => void`                     | Write `v` into item at index `i`                   |
 | `data`           | `() => TA`                                       | Return the underlying typed array (live view)      |
 | `move(from, to, n)` | `(from: number, to: number, n: number) => void` | Move `n` items from `from` to `to` (overlap-safe) |   
+| `fill(index, n, v)` | `(index: number, n: number, v: number) => void` | Fill `n` items starting at `index` with `v` |   
 
 ### Behavior notes
 
@@ -77,4 +81,14 @@ const raw: Float64Array = points.data
 - **Source is not cleared.** After a move, the original positions retain their previous values (same as `memmove`).
 - **Errors:**
   - `RangeError` if `fromIndex`, `toIndex`, or `n` is not a non-negative integer.
-  - `RangeError` if the move exceeds current size and `autoGrow` is `false`.    
+  - `RangeError` if the move exceeds current size and `autoGrow` is `false`. 
+
+### `fill` details
+
+- **Fills all elements** within each item (all `itemSize` elements receive the same value).
+- **Growth.** Grows the vector to `itemIndex + n` items if needed (when `autoGrow` is `true`). Does not grow if the fill fits exactly within the current size.
+- **Value validation.** `value` must be a finite number. `NaN`, `Infinity`, and `-Infinity` throw a `RangeError`.
+- **Errors:**
+  - `RangeError` if `itemIndex` or `n` is not a non-negative integer.
+  - `RangeError` if `value` is not finite.
+  - `RangeError` if the fill exceeds current size and `autoGrow` is `false`.      

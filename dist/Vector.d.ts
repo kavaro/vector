@@ -21,6 +21,7 @@ export declare class Vector<TA extends TypedArray> {
     get(itemIndex: number): TA;
     set(itemIndex: number, value: TA): void;
     move(fromIndex: number, toIndex: number, itemCount: number): void;
+    fill(itemIndex: number, itemCount: number, value: number): void;
     get itemSize(): number;
     get size(): number;
 }
