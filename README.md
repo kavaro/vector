@@ -4,9 +4,7 @@ A growable typed-array vector with configurable item size, supporting in-place b
 
 ### Installation
 
-```bash
-npm install vector-typed
-```
+This module is currently not published to npm.
 
 ### Usage
 
