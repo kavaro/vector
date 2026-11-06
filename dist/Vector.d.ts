@@ -20,6 +20,7 @@ export declare class Vector<TA extends TypedArray> {
     has(itemIndex: number): boolean;
     get(itemIndex: number): TA;
     set(itemIndex: number, value: TA): void;
+    move(fromIndex: number, toIndex: number, itemCount: number): void;
     get itemSize(): number;
     get size(): number;
 }

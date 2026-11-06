@@ -85,6 +85,27 @@ class Vector {
       throw new RangeError(`value length ${value.length} != itemSize ${this.#itemSize}`);
     this.#data.set(value, offset);
   }
+  move(fromIndex, toIndex, itemCount) {
+    if (!Number.isInteger(itemCount) || itemCount < 0)
+      throw new RangeError(`itemCount must be a non-negative integer, got ${itemCount}`);
+    if (!Number.isInteger(fromIndex) || fromIndex < 0)
+      throw new RangeError(`fromIndex must be a non-negative integer, got ${fromIndex}`);
+    if (!Number.isInteger(toIndex) || toIndex < 0)
+      throw new RangeError(`toIndex must be a non-negative integer, got ${toIndex}`);
+    if (itemCount === 0)
+      return;
+    const requiredItemCount = Math.max(fromIndex, toIndex) + itemCount;
+    if (requiredItemCount > this.#itemCount) {
+      if (!this.autoGrow) {
+        throw new RangeError(`Out of bounds move from ${fromIndex} to ${toIndex} size ${itemCount}`);
+      }
+      this.resize(requiredItemCount);
+    }
+    const target = this.getOffset(toIndex);
+    const start = this.getOffset(fromIndex);
+    const end = start + itemCount * this.#itemSize;
+    this.#data.copyWithin(target, start, end);
+  }
   get itemSize() {
     return this.#itemSize;
   }
