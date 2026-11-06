@@ -31,8 +31,12 @@ points.has(5)  // false
 points.resize(100)
 points.clear()
 
+// Move 2 points from index 0 to index 10
+points.move(0, 10, 2)
+
 // Access raw buffer
 const raw: Float64Array = points.data
+
 ```
 
 ### Options
@@ -56,6 +60,7 @@ const raw: Float64Array = points.data
 | `get(i)`           | `(i: number) => TA`                              | Return a **copy** of item at index `i`             |
 | `set(i, v)`        | `(i: number, v: TA) => void`                     | Write `v` into item at index `i`                   |
 | `data`           | `() => TA`                                       | Return the underlying typed array (live view)      |
+| `move(from, to, n)` | `(from: number, to: number, n: number) => void` | Move `n` items from `from` to `to` (overlap-safe) |   
 
 ### Behavior notes
 
@@ -64,4 +69,14 @@ const raw: Float64Array = points.data
 - **`autoGrow`** — when `true`, `get` and `set` will grow the vector if the index is out of bounds. When `false`, they throw a `RangeError`.
 - **Buffer growth** is in-place (via `ArrayBuffer.resize`) up to `2×` the initial allocation, then allocates a new buffer at `2×` the required size.
 - **Buffer shrink** is in-place and O(1) (no reallocation).
-- **`data`** returns a live length-tracking view. External holders see resizes automatically.   
+- **`data`** returns a live length-tracking view. External holders see resizes automatically.  
+
+### `move` details
+
+- **Overlap-safe.** Uses `TypedArray.prototype.copyWithin` internally (equivalent to `memmove`), so overlapping source and destination ranges are handled correctly in both forward and backward moves.
+- **Source beyond current size.** If `fromIndex + n > size` and `autoGrow` is `true`, the out-of-bounds source items are treated as zeros (consistent with `get` on grown indices).
+- **Growth.** Grows the vector to `max(fromIndex, toIndex) + n` items if needed (when `autoGrow` is `true`). Does not grow if the move fits exactly within the current size.
+- **Source is not cleared.** After a move, the original positions retain their previous values (same as `memmove`).
+- **Errors:**
+  - `RangeError` if `fromIndex`, `toIndex`, or `n` is not a non-negative integer.
+  - `RangeError` if the move exceeds current size and `autoGrow` is `false`.    
