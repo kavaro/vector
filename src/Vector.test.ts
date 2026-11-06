@@ -1,6 +1,6 @@
 // Vector.test.ts
 import { describe, it, expect, beforeEach } from 'vitest'
-import { Vector, Uint32Vector, Float64Vector } from './Vector'
+import { Vector, Uint32Vector, Float64Vector } from './index'
 
 describe('Vector', () => {
   describe('constructor', () => {
@@ -278,6 +278,110 @@ describe('Vector', () => {
       expect(v.get(2)).toEqual(new Uint32Array([7, 8, 9]))
     })
   })
+
+  describe('move', () => {
+    let v: Uint32Vector
+  
+    beforeEach(() => {
+      v = new Uint32Vector({ itemSize: 2, autoGrow: false })
+      v.resize(5)
+      // Fill with known values: item i = [i*2, i*2+1]
+      for (let i = 0; i < 5; i++) {
+        v.set(i, new Uint32Array([i * 2, i * 2 + 1]))
+      }
+    })
+  
+    it('moves items forward (overlapping)', () => {
+      // Move items 0-1 to position 3
+      v.move(0, 3, 2)
+      expect(v.get(3)).toEqual(new Uint32Array([0, 1]))
+      expect(v.get(4)).toEqual(new Uint32Array([2, 3]))
+      // Original positions retain old data (copyWithin doesn't clear source)
+      expect(v.get(0)).toEqual(new Uint32Array([0, 1]))
+      expect(v.get(1)).toEqual(new Uint32Array([2, 3]))
+    })
+  
+    it('moves items backward (overlapping)', () => {
+      // Move items 3-4 to position 1
+      v.move(3, 1, 2)
+      expect(v.get(1)).toEqual(new Uint32Array([6, 7]))
+      expect(v.get(2)).toEqual(new Uint32Array([8, 9]))
+    })
+  
+    it('moves a single item', () => {
+      v.move(2, 0, 1)
+      expect(v.get(0)).toEqual(new Uint32Array([4, 5]))
+    })
+  
+    it('move to same position is a no-op', () => {
+      v.move(2, 2, 2)
+      expect(v.get(2)).toEqual(new Uint32Array([4, 5]))
+      expect(v.get(3)).toEqual(new Uint32Array([6, 7]))
+    })
+  
+    it('does nothing when itemCount is 0', () => {
+      const data = v.data
+      v.move(0, 3, 0)
+      expect(v.data).toEqual(data)
+    })
+  
+    it('throws on negative itemCount', () => {
+      expect(() => v.move(0, 1, -1)).toThrow(RangeError)
+    })
+  
+    it('throws on fractional itemCount', () => {
+      expect(() => v.move(0, 1, 1.5)).toThrow(RangeError)
+    })
+  
+    it('throws on negative fromIndex', () => {
+      expect(() => v.move(-1, 1, 1)).toThrow(RangeError)
+    })
+  
+    it('throws on negative toIndex', () => {
+      expect(() => v.move(0, -1, 1)).toThrow(RangeError)
+    })
+  
+    it('throws on fractional fromIndex', () => {
+      expect(() => v.move(0.5, 1, 1)).toThrow(RangeError)
+    })
+  
+    it('throws on fractional toIndex', () => {
+      expect(() => v.move(0, 1.5, 1)).toThrow(RangeError)
+    })
+  
+    it('throws when out of bounds with autoGrow false', () => {
+      // fromIndex=3, itemCount=3 → required = 6 > 5
+      expect(() => v.move(3, 0, 3)).toThrow(RangeError)
+      // toIndex=4, itemCount=2 → required = 6 > 5
+      expect(() => v.move(0, 4, 2)).toThrow(RangeError)
+    })
+  
+    it('grows when autoGrow is true', () => {
+      v.autoGrow = true
+      v.move(3, 5, 2)  // required = 7 > 5
+      expect(v.size).toBe(7)
+      expect(v.get(5)).toEqual(new Uint32Array([6, 7]))
+      expect(v.get(6)).toEqual(new Uint32Array([8, 9]))
+    })
+  
+    it('grows when source extends beyond current size (autoGrow)', () => {
+      v.autoGrow = true
+      // fromIndex=4, itemCount=3 → source is items 4,5,6; items 5,6 are new (zero)
+      v.move(4, 0, 3)
+      expect(v.size).toBe(7)
+      expect(v.get(0)).toEqual(new Uint32Array([8, 9]))
+      expect(v.get(1)).toEqual(new Uint32Array([0, 0]))
+      expect(v.get(2)).toEqual(new Uint32Array([0, 0]))
+    })
+  
+    it('does not grow when requiredItemCount equals size', () => {
+      // fromIndex=3, toIndex=0, itemCount=2 → required = 5 == size
+      v.move(3, 0, 2)
+      expect(v.size).toBe(5)
+      expect(v.get(0)).toEqual(new Uint32Array([6, 7]))
+      expect(v.get(1)).toEqual(new Uint32Array([8, 9]))
+    })
+  })   
 })
 
 describe('Float64Vector', () => {

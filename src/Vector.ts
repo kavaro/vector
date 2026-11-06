@@ -12,9 +12,9 @@ export interface VectorOptions {
   autoGrow?: boolean          // when true, grows the vector on out of bound access
 }
 
-export type DataConstructor<TA extends TypedArray> = { 
+export type DataConstructor<TA extends TypedArray> = {
   new(buffer: ArrayBuffer, byteOffset: number): TA
-  readonly BYTES_PER_ELEMENT: number 
+  readonly BYTES_PER_ELEMENT: number
 }
 
 export class Vector<TA extends TypedArray> {
@@ -30,18 +30,18 @@ export class Vector<TA extends TypedArray> {
     options?: VectorOptions
   ) {
     this.#Data = Data
-    const { 
-      itemSize = 1, 
-      bufferItemCount = 1024, 
+    const {
+      itemSize = 1,
+      bufferItemCount = 1024,
       autoGrow = true
     } = options ?? {}
-    if (itemSize < 1 || !Number.isInteger(itemSize)) 
+    if (itemSize < 1 || !Number.isInteger(itemSize))
       throw new RangeError(`itemSize must be a positive integer, got ${itemSize}`)
     this.#itemSize = itemSize
     this.#itemCount = 0
     this.autoGrow = autoGrow
     const length = bufferItemCount * this.#itemSize
-    const byteLength = length * Data.BYTES_PER_ELEMENT 
+    const byteLength = length * Data.BYTES_PER_ELEMENT
     this.#buffer = new ArrayBuffer(byteLength, { maxByteLength: byteLength * 2 })
     this.#data = new Data(this.#buffer, 0)
   }
@@ -65,7 +65,7 @@ export class Vector<TA extends TypedArray> {
   }
 
   resize(newItemCount: number): void {
-    if (!Number.isInteger(newItemCount) || newItemCount < 0) 
+    if (!Number.isInteger(newItemCount) || newItemCount < 0)
       throw new RangeError(`newItemCount must be a non-negative integer, got ${newItemCount}`)
     const newLength = newItemCount * this.#itemSize
     const newByteLength = newLength * this.#Data.BYTES_PER_ELEMENT
@@ -73,7 +73,7 @@ export class Vector<TA extends TypedArray> {
       this.#growLength(newLength)
     } else if (newByteLength < this.#buffer.byteLength) {
       this.#buffer.resize(newByteLength)
-    }  
+    }
     this.#itemCount = newItemCount
   }
 
@@ -98,7 +98,7 @@ export class Vector<TA extends TypedArray> {
   assertOffset(itemIndex: number): number {
     const offset = this.getOffset(itemIndex)
     if (offset === -1) {
-      throw new RangeError(`Out of bounds item index ${itemIndex}`) 
+      throw new RangeError(`Out of bounds item index ${itemIndex}`)
     }
     return offset
   }
@@ -110,13 +110,34 @@ export class Vector<TA extends TypedArray> {
   get(itemIndex: number): TA {
     const offset = this.assertOffset(itemIndex)
     return this.#data.subarray(offset, offset + this.#itemSize).slice() as TA
-  }   
+  }
 
   set(itemIndex: number, value: TA): void {
     const offset = this.assertOffset(itemIndex)
-    if (value.length !== this.#itemSize) 
+    if (value.length !== this.#itemSize)
       throw new RangeError(`value length ${value.length} != itemSize ${this.#itemSize}`)
     this.#data.set(value, offset)
+  }
+
+  move(fromIndex: number, toIndex: number, itemCount: number) {
+    if (!Number.isInteger(itemCount) || itemCount < 0)
+      throw new RangeError(`itemCount must be a non-negative integer, got ${itemCount}`)
+    if (!Number.isInteger(fromIndex) || fromIndex < 0)
+      throw new RangeError(`fromIndex must be a non-negative integer, got ${fromIndex}`)
+    if (!Number.isInteger(toIndex) || toIndex < 0)
+      throw new RangeError(`toIndex must be a non-negative integer, got ${toIndex}`)
+    if (itemCount === 0) return
+    const requiredItemCount = Math.max(fromIndex, toIndex) + itemCount
+    if (requiredItemCount > this.#itemCount) {
+      if (!this.autoGrow) {
+        throw new RangeError(`Out of bounds move from ${fromIndex} to ${toIndex} size ${itemCount}`)
+      }
+      this.resize(requiredItemCount)
+    }
+    const target = this.getOffset(toIndex)
+    const start = this.getOffset(fromIndex)
+    const end = start + (itemCount * this.#itemSize)
+    this.#data.copyWithin(target, start, end)
   }
 
   get itemSize() {
